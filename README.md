@@ -23,7 +23,6 @@ What's new in v1.0.4 - 08/Nov/2023
    >>> from cloudiplookup import CloudIPLookup, update_ip_ranges
    >>> update_ip_ranges()  
    0
-   >>> update_ip_ranges(True)
    >>> update_ip_ranges(verbose=True)
    Updating AWS - Downloading IP ranges file [0.342903962 sec]
    Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-07 22:43:10 [0.009359716 sec]
