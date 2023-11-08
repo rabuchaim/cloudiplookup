@@ -1,0 +1,279 @@
+# Cloud IP Lookup v1.0.4
+Cloud IP Lookup is a Pure Python application and library for Python 3 to verify which cloud platform a given IP address belongs to. Its supports IPv4 and IPv6, and have its own database that can be updated whenever you want with a simple command: ```cloudiplookup --update [--verbose]```
+
+Data is collected from the websites of the most popular cloud service providers. Sometimes these databases are updated several times a day. We recommend that you put the update command in your crontab, at least once a day.
+
+This version has data from AWS, Azure, Google Cloud, Oracle Cloud and Digital Ocean providers. Some of them provide the names of services and regions, others don´t, like Google Cloud that only provides the network ranges. And it works on Unix, Linux, MacOS and Windows.
+
+We can add other cloud providers, just open an issue at https://github.com/rabuchaim/cloudiplookup/issues. The requirement for addition is that the cloud provider must have a page where its network ranges are published in json, txt or csv format. For example, AWS: https://ip-ranges.amazonaws.com/ip-ranges.json.
+
+```
+What's new in v1.0.4 - 08/Nov/2023
+- Created a debug option in function update_ip_ranges(). The debug option save all files
+  downloaded from cloud providers into the data directory. Debug is not verbose!
+
+  def update_ip_ranges(verbose=False,debug=False):
+
+- The "verbose" option in the update_ip_ranges(verbose=False) function was not 
+  working. This problem only occurs if you are using as a library and try to 
+  update cloudiplookup while a program is running. Verbose log messages 
+  were displayed even if enabled with the "verbose=False" option. It is now 
+  working correctly. It did not affect the search or the update itself.
+
+   >>> from cloudiplookup import CloudIPLookup, update_ip_ranges
+   >>> update_ip_ranges()  
+   0
+   >>> update_ip_ranges(True)
+   >>> update_ip_ranges(verbose=True)
+   Updating AWS - Downloading IP ranges file [0.342903962 sec]
+   Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-07 22:43:10 [0.009359716 sec]
+   (.......)
+```
+
+## Installation
+
+```bash
+pip install cloudiplookup
+```
+Or cloning from Github
+```bash
+git clone https://github.com/rabuchaim/cloudiplookup.git
+```
+
+## How to use it as a Python library
+
+```bash
+# python3
+Python 3.11.6 (main, Oct 23 2023, 22:48:54) [GCC 11.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from cloudiplookup import CloudIPLookup
+>>> myLookup = CloudIPLookup(verbose=True)
+Cloud IP Lookup v1.0.3 is ready! loaded with 48526 networks in 0.00633 seconds and using 4.16 MiB of RAM.
+>>> print(myLookup.lookup('52.94.7.24').pp_json())
+{
+   "ip": "52.94.7.24",
+   "cidr": "52.94.7.0/24",
+   "region": "sa-east-1",
+   "cloud_provider": "AWS",
+   "service": "DYNAMODB",
+   "elapsed_time": "0.000128607 sec"
+}
+>>>
+>>> result = myLookup.lookup('52.94.7.24')
+>>> print(result.cloud_provider)
+AWS
+>>> print(result.region)
+sa-east-1
+>>>
+>>> result.to_dict()['cloud_provider']
+'AWS'
+>>> result.to_dict()['region']
+'sa-east-1'
+>>>
+>>> myLookup.get_database_info()
+{
+   "AWS": {
+      "last_updated": "2023-11-06 14:43:07",
+      "total_networks": 7224
+   },
+   "Azure": {
+      "last_updated": "2023-11-01 04:11:17",
+      "total_networks": 38887
+   },
+   "Digital Ocean": {
+      "last_updated": "2023-11-02 21:29:13",
+      "total_networks": 1683
+   },
+   "Google Cloud": {
+      "last_updated": "2023-11-06 06:04:32",
+      "total_networks": 85
+   },
+   "Oracle Cloud": {
+      "last_updated": "2023-10-10 04:47:03",
+      "total_networks": 647
+   }
+}
+>>>
+>>> from cloudiplookup import update_ip_ranges
+>>> update_ip_ranges(verbose=True,debug=False)
+Updating AWS - Downloading IP ranges file [0.190423684 sec]
+Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 14:43:07 [0.010714033 sec]
+Updating AZURE - Downloading IP ranges file [10.871746108 sec]
+Updating AZURE - Parsing IPv4 and IPv6 ranges updated at 2023-11-01 04:11:17 [0.071221152 sec]
+Updating DIGITAL OCEAN - Downloading IP ranges file [0.190326967 sec]
+Updating DIGITAL OCEAN - Parsing IPv4 and IPv6 ranges updated at 2023-11-02 21:28:57 [0.004760765 sec]
+Updating GCP - Downloading IP ranges file [0.272948108 sec]
+Updating GCP - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 06:04:32 [0.000253580 sec]
+Updating ORACLE - Downloading IP ranges file [1.133147773 sec]
+Updating ORACLE - Parsing IPv4 and IPv6 ranges updated at 2023-10-10 04:47:03 [0.000605731 sec]
+Sorting IPv4 and IPv6 data [0.017888779 sec]
+Updating all lists... Done! [0.025970340 sec]
+Saved file /var/lib/cloudiplookup/cloudiplookup.dat.gz [0.197057534 sec]
+Cloud IP Lookup updated with success! [12.750893398 sec]
+>>>
+```
+
+## The database file
+
+Cloud IP Lookup uses a pickle database that is a bunch of lists of integers. Everything is located at ```/var/lib/cloudiplookup/```. 
+
+> *On Windows systems, these files are located in the same directory as the library files*.
+
+```bash
+root@tucupi:/var/lib/cloudiplookup# ll
+total 184
+drwxr-xr-x  2 root root   4096 Nov  6 00:21 ./
+drwxr-xr-x 47 root root   4096 Oct 11 21:11 ../
+-rw-r--r--  1 root root 172158 Nov  6 00:15 cloudiplookup.dat.gz
+-rw-r--r--  1 root root    942 Sep 29 10:53 cloudiplookup.json
+```
+
+There is a file ```/var/lib/cloudiplookup/cloudiplookup.json``` with all cloud providers information and an another file ```/var/lib/cloudiplookup/cloudiplookup.dat.gz``` that is the database created by function ```update_ip_ranges()```.
+
+```bash
+root@tambaqui:/var/lib/cloudiplookup# cat cloudiplookup.json
+{
+    "AWS": {
+        "info_page": "https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html",
+        "download_url": "https://ip-ranges.amazonaws.com/ip-ranges.json"
+    },
+    "AZURE": {
+        "info_page": "https://www.microsoft.com/en-us/download/details.aspx?id=56519",
+        "download_url": "https://download.microsoft.com/download/(...)/ServiceTags_Public_XXXXXXXX.json"
+    },
+    "DIGITALOCEAN": {
+        "info_page": "https://docs.digitalocean.com/products/platform/",
+        "download_url": "https://digitalocean.com/geo/google.csv"
+    },
+    "GCP": {
+        "info_page": "https://support.google.com/a/answer/10026322?hl=en",
+        "download_url": "https://www.gstatic.com/ipranges/goog.json"
+    },
+    "ORACLE": {
+        "info_page": "https://docs.oracle.com/pt-br/iaas/Content/General/Concepts/addressranges.htm",
+        "download_url": "https://docs.oracle.com/iaas/tools/public_ip_ranges.json"
+    }
+}
+```
+
+## Use as a command line application
+
+```bash
+# cloudiplookup
+Usage: cloudiplookup.py [--csv] [--info] [--update] [--show-config-file] [--verbose] [--debug] [--help] [--version] [ipaddr,ipaddrN...]
+
+Cloud IP Lookup v1.0.3 - Public cloud services IP addresses lookup tool
+
+Lookup Parameters:
+  ipaddr,ipaddrN...   Supply one or more IP address separated by comma.
+
+Output Options:
+  --csv, -c           Print output in csv format (ip,cidr,region,cloud_provider,service,elapsed_time).
+
+Database Options:
+  --info, -i          Shows information about the current database file.
+  --update, -u        Updates IP ranges directly from cloud service providers. Use -v to see updating progress.
+  --show-config-file  Displays the available settings for downloading information about network ranges.
+
+More Options:
+  --verbose, -v       Shows useful messages about each step that application is doing.
+  --debug, -d         Save all data from cloud providers in the data directory. Debug is not verbose!
+  --help, -h, -?      Shows this help message about the allowed commands.
+  --version           Shows the application version.
+```
+
+```bash
+# cloudiplookup 3.2.35.65,5.101.104.55,2600:9000:21e8:2600:1:5a19:8b40:93a1,8.35.192.12,13.71.199.112
+{
+   "ip": "3.2.35.65",
+   "cidr": "3.2.35.64/26",
+   "region": "sa-east-1",
+   "cloud_provider": "AWS",
+   "service": "EC2",
+   "elapsed_time": "0.000016832 sec"
+}
+{
+   "ip": "5.101.104.55",
+   "cidr": "5.101.104.0/22",
+   "region": "NL-NH Amsterdam",
+   "cloud_provider": "Digital Ocean",
+   "service": "",
+   "elapsed_time": "0.000002593 sec"
+}
+{
+   "ip": "2600:9000:21e8:2600:1:5a19:8b40:93a1",
+   "cidr": "2600:9000:2000::/36",
+   "region": "GLOBAL",
+   "cloud_provider": "AWS",
+   "service": "CLOUDFRONT",
+   "elapsed_time": "0.000024586 sec"
+}
+{
+   "ip": "8.35.192.12",
+   "cidr": "8.35.192.0/20",
+   "region": "",
+   "cloud_provider": "Google Cloud",
+   "service": "",
+   "elapsed_time": "0.000006054 sec"
+}
+{
+   "ip": "13.71.199.112",
+   "cidr": "13.71.199.112/30",
+   "region": "westcentralus",
+   "cloud_provider": "Azure",
+   "service": "ActionGroup",
+   "elapsed_time": "0.000004339 sec"
+}
+ ```
+```bash
+# cloudiplookup --csv 3.2.35.65,5.101.104.55,2600:9000:21e8:2600:1:5a19:8b40:93a1,8.35.192.12,13.71.199.112
+3.2.35.65,3.2.35.64/26,sa-east-1,AWS,EC2,0.000019659
+5.101.104.55,5.101.104.0/22,NL-NH Amsterdam,Digital Ocean,,0.000002078
+2600:9000:21e8:2600:1:5a19:8b40:93a1,2600:9000:2000::/36,GLOBAL,AWS,CLOUDFRONT,0.000028556
+8.35.192.12,8.35.192.0/20,,Google Cloud,,0.000004661
+13.71.199.112,13.71.199.112/30,westcentralus,Azure,ActionGroup,0.000004508
+```
+```bash
+# cloudiplookup --update --verbose
+Updating AWS - Downloading IP ranges file [0.190423684 sec]
+Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 14:43:07 [0.010714033 sec]
+Updating AZURE - Downloading IP ranges file [10.871746108 sec]
+Updating AZURE - Parsing IPv4 and IPv6 ranges updated at 2023-11-01 04:11:17 [0.071221152 sec]
+Updating DIGITAL OCEAN - Downloading IP ranges file [0.190326967 sec]
+Updating DIGITAL OCEAN - Parsing IPv4 and IPv6 ranges updated at 2023-11-02 21:28:57 [0.004760765 sec]
+Updating GCP - Downloading IP ranges file [0.272948108 sec]
+Updating GCP - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 06:04:32 [0.000253580 sec]
+Updating ORACLE - Downloading IP ranges file [1.133147773 sec]
+Updating ORACLE - Parsing IPv4 and IPv6 ranges updated at 2023-10-10 04:47:03 [0.000605731 sec]
+Sorting IPv4 and IPv6 data [0.017888779 sec]
+Updating all lists... Done! [0.025970340 sec]
+Saved file /var/lib/cloudiplookup/cloudiplookup.dat.gz [0.197057534 sec]
+Cloud IP Lookup updated with success! [12.750893398 sec]
+```
+
+## Debug mode
+
+If you update the data using the ```--debug``` option, all files downloaded from cloud service providers will be available in the ```/var/lib/cloudiplookup``` directory. 
+
+> *On Windows systems, these files are located in the same directory as the library files*.
+
+```bash
+root@tambaqui:/var/lib/cloudiplookup# ll
+total 19836
+drwxr-xr-x  2 root root     4096 Oct 11 21:12 ./
+drwxr-xr-x 47 root root     4096 Oct 11 21:11 ../
+-rw-r--r--  1 root root 10242492 Nov  5 23:27 cloudip.json
+-rw-r--r--  1 root root   172158 Nov  6 00:15 cloudiplookup.dat.gz
+-rw-r--r--  1 root root  4377128 Nov  5 23:27 cloudiplookup.dat.json
+-rw-r--r--  1 root root      942 Sep 29 10:53 cloudiplookup.json
+-rw-r--r--  1 root root  1661309 Nov  5 23:26 ipranges-aws.json
+-rw-r--r--  1 root root  3661377 Nov  5 23:27 ipranges-azure.json
+-rw-r--r--  1 root root    71987 Nov  5 23:27 ipranges-digitalocean.csv
+-rw-r--r--  1 root root     4934 Nov  5 23:27 ipranges-gcp.json
+-rw-r--r--  1 root root    93165 Nov  5 23:27 ipranges-oracle.json
+```
+
+
+## Sugestions, feedbacks, bugs, new cloud service provider requests...
+E-mail me: ricardoabuchaim at gmail.com
+

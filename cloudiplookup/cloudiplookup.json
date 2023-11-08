@@ -1,0 +1,22 @@
+{
+    "AWS": {
+        "info_page": "https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html",
+        "download_url": "https://ip-ranges.amazonaws.com/ip-ranges.json"
+    },
+    "AZURE": {
+        "info_page": "https://www.microsoft.com/en-us/download/details.aspx?id=56519",
+        "download_url": "https://download.microsoft.com/download/(...)/ServiceTags_Public_XXXXXXXX.json"
+    },
+    "DIGITALOCEAN": {
+        "info_page": "https://docs.digitalocean.com/products/platform/",
+        "download_url": "https://www.digitalocean.com/geo/google.csv"
+    },
+    "GCP": {
+        "info_page": "https://support.google.com/a/answer/10026322?hl=en",
+        "download_url": "https://www.gstatic.com/ipranges/goog.json"
+    },
+    "ORACLE": {
+        "info_page": "https://docs.oracle.com/pt-br/iaas/Content/General/Concepts/addressranges.htm",
+        "download_url": "https://docs.oracle.com/iaas/tools/public_ip_ranges.json"
+    }
+}
