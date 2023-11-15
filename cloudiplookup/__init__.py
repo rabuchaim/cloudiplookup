@@ -4,6 +4,6 @@
 
 __author__ = 'Ricardo Abuchaim'
 __license__ = 'MIT'
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 
 from cloudiplookup.cloudiplookup import CloudIPLookup, update_ip_ranges

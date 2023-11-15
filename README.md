@@ -1,32 +1,16 @@
-# Cloud IP Lookup v1.0.4
+# Cloud IP Lookup v1.0.5
 Cloud IP Lookup is a Pure Python application and library for Python 3 to verify which cloud platform a given IP address belongs to. Its supports IPv4 and IPv6, and have its own database that can be updated whenever you want with a simple command: ```cloudiplookup --update [--verbose]```
 
-Data is collected from the websites of the most popular cloud service providers. Sometimes these databases are updated several times a day. We recommend that you put the update command in your crontab, at least once a day.
+**Cloud IP Lookup does not connect to your cloud services account**. All data is collected from the websites of the most popular cloud service providers. Sometimes these databases are updated several times a day. We recommend that you put the update command in your crontab, at least once a day.
 
-This version has data from AWS, Azure, Google Cloud, Oracle Cloud and Digital Ocean providers. Some of them provide the names of services and regions, others don´t, like Google Cloud that only provides the network ranges. And it works on Unix, Linux, MacOS and Windows.
+This version has data from AWS, Azure, Cloudflare, Digital Ocean, Google Services (Google Bot, Special Crawlers and User Fetchers), Google Cloud, JD Cloud China and Oracle Cloud providers. Some of them provide the names of services and regions, others don´t, like Cloudflare that only provides the network ranges.
 
 We can add other cloud providers, just open an issue at https://github.com/rabuchaim/cloudiplookup/issues. The requirement for addition is that the cloud provider must have a page where its network ranges are published in json, txt or csv format. For example, AWS: https://ip-ranges.amazonaws.com/ip-ranges.json.
 
 ```
-What's new in v1.0.4 - 08/Nov/2023
-- Created a debug option in function update_ip_ranges(). The debug option save all files
-  downloaded from cloud providers into the data directory. Debug is not verbose!
-
-  def update_ip_ranges(verbose=False,debug=False):
-
-- The "verbose" option in the update_ip_ranges(verbose=False) function was not 
-  working. This problem only occurs if you are using as a library and try to 
-  update cloudiplookup while a program is running. Verbose log messages 
-  were displayed even if enabled with the "verbose=False" option. It is now 
-  working correctly. It did not affect the search or the update itself.
-
-   >>> from cloudiplookup import CloudIPLookup, update_ip_ranges
-   >>> update_ip_ranges()  
-   0
-   >>> update_ip_ranges(verbose=True)
-   Updating AWS - Downloading IP ranges file [0.342903962 sec]
-   Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-07 22:43:10 [0.009359716 sec]
-   (.......)
+What's new in v1.0.5 - 15/Nov/2023
+- Updated Google Services (Google Bot, Special Crawlers and User Fetchers), 
+  Cloudflare and JD Cloud China.
 ```
 
 ## Installation
@@ -47,7 +31,7 @@ Python 3.11.6 (main, Oct 23 2023, 22:48:54) [GCC 11.4.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from cloudiplookup import CloudIPLookup
 >>> myLookup = CloudIPLookup(verbose=True)
-Cloud IP Lookup v1.0.3 is ready! loaded with 48526 networks in 0.00633 seconds and using 4.16 MiB of RAM.
+Cloud IP Lookup v1.0.5 is ready! loaded with 48526 networks in 0.00633 seconds and using 4.16 MiB of RAM.
 >>> print(myLookup.lookup('52.94.7.24').pp_json())
 {
    "ip": "52.94.7.24",
@@ -72,20 +56,44 @@ sa-east-1
 >>> myLookup.get_database_info()
 {
    "AWS": {
-      "last_updated": "2023-11-06 14:43:07",
-      "total_networks": 7224
+      "last_updated": "2023-11-14 14:13:09",
+      "total_networks": 7251
    },
    "Azure": {
-      "last_updated": "2023-11-01 04:11:17",
-      "total_networks": 38887
+      "last_updated": "2023-11-14 12:29:44",
+      "total_networks": 39244
+   },
+   "Cloudflare": {
+      "last_updated": "2023-11-15 05:24:27",
+      "total_networks": 22
    },
    "Digital Ocean": {
-      "last_updated": "2023-11-02 21:29:13",
+      "last_updated": "2023-11-14 17:43:11",
       "total_networks": 1683
    },
    "Google Cloud": {
-      "last_updated": "2023-11-06 06:04:32",
-      "total_networks": 85
+      "last_updated": "2023-11-14 18:04:10",
+      "total_networks": 652
+   },
+   "Google Services": {
+      "last_updated": "2023-11-14 18:04:10",
+      "total_networks": 61
+   },
+   "Google Bot": {
+      "last_updated": "2023-11-14 23:00:21",
+      "total_networks": 231
+   },
+   "Google Special Crawlers": {
+      "last_updated": "2023-11-14 23:00:25",
+      "total_networks": 210
+   },
+   "Google User Triggered Fetchers": {
+      "last_updated": "2023-11-14 23:00:22",
+      "total_networks": 719
+   },
+   "JD Cloud": {
+      "last_updated": "2023-11-15 05:24:30",
+      "total_networks": 115
    },
    "Oracle Cloud": {
       "last_updated": "2023-10-10 04:47:03",
@@ -95,20 +103,32 @@ sa-east-1
 >>>
 >>> from cloudiplookup import update_ip_ranges
 >>> update_ip_ranges(verbose=True,debug=False)
-Updating AWS - Downloading IP ranges file [0.190423684 sec]
-Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 14:43:07 [0.010714033 sec]
-Updating AZURE - Downloading IP ranges file [10.871746108 sec]
-Updating AZURE - Parsing IPv4 and IPv6 ranges updated at 2023-11-01 04:11:17 [0.071221152 sec]
-Updating DIGITAL OCEAN - Downloading IP ranges file [0.190326967 sec]
-Updating DIGITAL OCEAN - Parsing IPv4 and IPv6 ranges updated at 2023-11-02 21:28:57 [0.004760765 sec]
-Updating GCP - Downloading IP ranges file [0.272948108 sec]
-Updating GCP - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 06:04:32 [0.000253580 sec]
-Updating ORACLE - Downloading IP ranges file [1.133147773 sec]
-Updating ORACLE - Parsing IPv4 and IPv6 ranges updated at 2023-10-10 04:47:03 [0.000605731 sec]
-Sorting IPv4 and IPv6 data [0.017888779 sec]
-Updating all lists... Done! [0.025970340 sec]
-Saved file /var/lib/cloudiplookup/cloudiplookup.dat.gz [0.197057534 sec]
-Cloud IP Lookup updated with success! [12.750893398 sec]
+Updating AWS - Downloading IP ranges file [0.194571811 sec]
+Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 14:13:09 [0.008731522 sec]
+Updating AZURE - Downloading IP ranges file [9.597737358 sec]
+Updating AZURE - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 12:29:44 [0.064075109 sec]
+Updating CLOUDFLARE - Downloading IP ranges file [0.109633796 sec]
+Updating CLOUDFLARE - Parsing IPv4 and IPv6 ranges updated at 2023-11-15 05:23:41 [0.000105514 sec]
+Updating DIGITAL OCEAN - Downloading IP ranges file [0.447540575 sec]
+Updating DIGITAL OCEAN - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 17:43:11 [0.004395924 sec]
+Updating GCP - Downloading IP ranges file [0.197874399 sec]
+Updating GCP - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 18:04:10 [0.001701975 sec]
+Updating GOOGLE GOOGLE SERVICES - Downloading IP ranges file [0.294104148 sec]
+Updating GOOGLE GOOGLE SERVICES - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 18:04:10 [0.000351157 sec]
+Updating GOOGLE GOOGLE BOT - Downloading IP ranges file [0.396489796 sec]
+Updating GOOGLE GOOGLE BOT - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 23:00:21 [0.000692362 sec]
+Updating GOOGLE GOOGLE SPECIAL CRAWLERS - Downloading IP ranges file [0.350542481 sec]
+Updating GOOGLE GOOGLE SPECIAL CRAWLERS - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 23:00:25 [0.000751040 sec]
+Updating GOOGLE GOOGLE USER TRIGGERED FETCHERS - Downloading IP ranges file [0.564765383 sec]
+Updating GOOGLE GOOGLE USER TRIGGERED FETCHERS - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 23:00:22 [0.001925866 sec]
+Updating JD CLOUD - Downloading IP ranges file [0.375312087 sec]
+Updating JD CLOUD - Parsing IPv4 and IPv6 ranges updated at 2023-11-15 05:23:44 [0.000438635 sec]
+Updating ORACLE - Downloading IP ranges file [1.007827670 sec]
+Updating ORACLE - Parsing IPv4 and IPv6 ranges updated at 2023-10-10 04:47:03 [0.001333245 sec]
+Sorting IPv4 and IPv6 data [0.019742529 sec]
+Updating all lists... Done! [0.042858025 sec]
+Saved file /var/lib/cloudiplookup/cloudiplookup.dat.gz [0.200645894 sec]
+Cloud IP Lookup updated with success! [13.629677833 sec]
 >>>
 ```
 
@@ -140,13 +160,25 @@ root@tambaqui:/var/lib/cloudiplookup# cat cloudiplookup.json
         "info_page": "https://www.microsoft.com/en-us/download/details.aspx?id=56519",
         "download_url": "https://download.microsoft.com/download/(...)/ServiceTags_Public_XXXXXXXX.json"
     },
+    "CLOUDFLARE": {
+        "info_page": "https://www.cloudflare.com/ips/",
+        "download_url": "https://api.cloudflare.com/client/v4/ips"
+    },
     "DIGITALOCEAN": {
         "info_page": "https://docs.digitalocean.com/products/platform/",
-        "download_url": "https://digitalocean.com/geo/google.csv"
+        "download_url": "https://www.digitalocean.com/geo/google.csv"
     },
-    "GCP": {
+    "GOOGLECLOUD": {
+        "info_page": "https://support.google.com/a/answer/10026322?hl=en",
+        "download_url": "https://www.gstatic.com/ipranges/cloud.json"
+    },
+    "GOOGLESERVICES": {
         "info_page": "https://support.google.com/a/answer/10026322?hl=en",
         "download_url": "https://www.gstatic.com/ipranges/goog.json"
+    },    
+    "JDCLOUD": {
+        "info_page": "https://www.cloudflare.com/ips/",
+        "download_url": "https://api.cloudflare.com/client/v4/ips?networks=jdcloud"
     },
     "ORACLE": {
         "info_page": "https://docs.oracle.com/pt-br/iaas/Content/General/Concepts/addressranges.htm",
@@ -159,9 +191,10 @@ root@tambaqui:/var/lib/cloudiplookup# cat cloudiplookup.json
 
 ```bash
 # cloudiplookup
-Usage: cloudiplookup.py [--csv] [--info] [--update] [--show-config-file] [--verbose] [--debug] [--help] [--version] [ipaddr,ipaddrN...]
+root@pirarara:/var/lib/cloudiplookup# ./cloudiplookup.py
+Usage: cloudiplookup.py [--csv] [--info] [--pretty] [--update] [--show-config-file] [--verbose] [--debug] [--help] [--version] [ipaddr,ipaddrN...]
 
-Cloud IP Lookup v1.0.3 - Public cloud services IP addresses lookup tool
+Cloud IP Lookup v1.0.5 - Public cloud services IP addresses lookup tool
 
 Lookup Parameters:
   ipaddr,ipaddrN...   Supply one or more IP address separated by comma.
@@ -170,8 +203,9 @@ Output Options:
   --csv, -c           Print output in csv format (ip,cidr,region,cloud_provider,service,elapsed_time).
 
 Database Options:
-  --info, -i          Shows information about the current database file.
   --update, -u        Updates IP ranges directly from cloud service providers. Use -v to see updating progress.
+  --info, -i          Shows information about the current database file in json format.
+  --pretty, -p        Shows information about the current database file in a table format.
   --show-config-file  Displays the available settings for downloading information about network ranges.
 
 More Options:
@@ -182,7 +216,7 @@ More Options:
 ```
 
 ```bash
-# cloudiplookup 3.2.35.65,5.101.104.55,2600:9000:21e8:2600:1:5a19:8b40:93a1,8.35.192.12,13.71.199.112
+# cloudiplookup 3.2.35.65,5.101.104.55,66.249.66.193,2600:9000:21e8:2600:1:5a19:8b40:93a1,104.198.16.10,13.71.199.112
 {
    "ip": "3.2.35.65",
    "cidr": "3.2.35.64/26",
@@ -200,6 +234,14 @@ More Options:
    "elapsed_time": "0.000002593 sec"
 }
 {
+   "ip": "66.249.66.193",
+   "cidr": "66.249.66.192/27",
+   "region": "",
+   "cloud_provider": "Google",
+   "service": "Bot",
+   "elapsed_time": "0.000031584 sec"
+}
+{
    "ip": "2600:9000:21e8:2600:1:5a19:8b40:93a1",
    "cidr": "2600:9000:2000::/36",
    "region": "GLOBAL",
@@ -208,12 +250,12 @@ More Options:
    "elapsed_time": "0.000024586 sec"
 }
 {
-   "ip": "8.35.192.12",
-   "cidr": "8.35.192.0/20",
-   "region": "",
+   "ip": "104.198.16.10",
+   "cidr": "104.198.16.0/20",
+   "region": "us-central1",
    "cloud_provider": "Google Cloud",
-   "service": "",
-   "elapsed_time": "0.000006054 sec"
+   "service": "Google Cloud",
+   "elapsed_time": "0.000026428 sec"
 }
 {
    "ip": "13.71.199.112",
@@ -234,22 +276,47 @@ More Options:
 ```
 ```bash
 # cloudiplookup --update --verbose
-Updating AWS - Downloading IP ranges file [0.190423684 sec]
-Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 14:43:07 [0.010714033 sec]
-Updating AZURE - Downloading IP ranges file [10.871746108 sec]
-Updating AZURE - Parsing IPv4 and IPv6 ranges updated at 2023-11-01 04:11:17 [0.071221152 sec]
-Updating DIGITAL OCEAN - Downloading IP ranges file [0.190326967 sec]
-Updating DIGITAL OCEAN - Parsing IPv4 and IPv6 ranges updated at 2023-11-02 21:28:57 [0.004760765 sec]
-Updating GCP - Downloading IP ranges file [0.272948108 sec]
-Updating GCP - Parsing IPv4 and IPv6 ranges updated at 2023-11-06 06:04:32 [0.000253580 sec]
-Updating ORACLE - Downloading IP ranges file [1.133147773 sec]
-Updating ORACLE - Parsing IPv4 and IPv6 ranges updated at 2023-10-10 04:47:03 [0.000605731 sec]
-Sorting IPv4 and IPv6 data [0.017888779 sec]
-Updating all lists... Done! [0.025970340 sec]
-Saved file /var/lib/cloudiplookup/cloudiplookup.dat.gz [0.197057534 sec]
-Cloud IP Lookup updated with success! [12.750893398 sec]
+Updating AWS - Downloading IP ranges file [0.247580905 sec]
+Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 14:13:09 [0.007899989 sec]
+Updating AZURE - Downloading IP ranges file [11.802777994 sec]
+Updating AZURE - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 12:29:44 [0.069718062 sec]
+Updating CLOUDFLARE - Downloading IP ranges file [0.096246977 sec]
+Updating CLOUDFLARE - Parsing IPv4 and IPv6 ranges updated at 2023-11-15 05:24:27 [0.000107779 sec]
+Updating DIGITAL OCEAN - Downloading IP ranges file [0.715709110 sec]
+Updating DIGITAL OCEAN - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 17:43:11 [0.004408466 sec]
+Updating GOOGLE CLOUD - Downloading IP ranges file [0.243777335 sec]
+Updating GOOGLE CLOUD - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 18:04:10 [0.000553817 sec]
+Updating GOOGLE GOOGLE SERVICES - Downloading IP ranges file [0.219680303 sec]
+Updating GOOGLE GOOGLE SERVICES - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 18:04:10 [0.000346342 sec]
+Updating GOOGLE GOOGLE BOT - Downloading IP ranges file [0.488023029 sec]
+Updating GOOGLE GOOGLE BOT - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 23:00:21 [0.000280338 sec]
+Updating GOOGLE GOOGLE SPECIAL CRAWLERS - Downloading IP ranges file [0.362579674 sec]
+Updating GOOGLE GOOGLE SPECIAL CRAWLERS - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 23:00:25 [0.000616955 sec]
+Updating GOOGLE GOOGLE USER TRIGGERED FETCHERS - Downloading IP ranges file [0.587292662 sec]
+Updating GOOGLE GOOGLE USER TRIGGERED FETCHERS - Parsing IPv4 and IPv6 ranges updated at 2023-11-14 23:00:22 [0.001841709 sec]
+Updating JD CLOUD - Downloading IP ranges file [0.391410524 sec]
+Updating JD CLOUD - Parsing IPv4 and IPv6 ranges updated at 2023-11-15 05:24:30 [0.000430358 sec]
+Updating ORACLE - Downloading IP ranges file [0.732044416 sec]
+Updating ORACLE - Parsing IPv4 and IPv6 ranges updated at 2023-10-10 04:47:03 [0.001720133 sec]
+Sorting IPv4 and IPv6 data [0.021423362 sec]
+Updating all lists... Done! [0.028821872 sec]
+Saved file /var/lib/cloudiplookup/cloudiplookup.dat.gz [0.203250980 sec]
+Cloud IP Lookup updated with success! [15.981186821 sec]
 ```
-
+```bash
+# ./cloudiplookup.py --info --pretty
+AWS.............................: 7251 networks   - Last update: 2023-11-14 14:13:09
+Azure...........................: 39244 networks  - Last update: 2023-11-14 12:29:44
+Cloudflare......................: 22 networks     - Last update: 2023-11-15 05:24:27
+Digital Ocean...................: 1683 networks   - Last update: 2023-11-14 17:43:11
+Google Cloud....................: 652 networks    - Last update: 2023-11-14 18:04:10
+Google Services.................: 61 networks     - Last update: 2023-11-14 18:04:10
+Google Bot......................: 231 networks    - Last update: 2023-11-14 23:00:21
+Google Special Crawlers.........: 210 networks    - Last update: 2023-11-14 23:00:25
+Google User Triggered Fetchers..: 719 networks    - Last update: 2023-11-14 23:00:22
+JD Cloud........................: 115 networks    - Last update: 2023-11-15 05:24:30
+Oracle Cloud....................: 647 networks    - Last update: 2023-10-10 04:47:03
+```
 ## Debug mode
 
 If you update the data using the ```--debug``` option, all files downloaded from cloud service providers will be available in the ```/var/lib/cloudiplookup``` directory. 
@@ -257,21 +324,26 @@ If you update the data using the ```--debug``` option, all files downloaded from
 > *On Windows systems, these files are located in the same directory as the library files*.
 
 ```bash
-root@tambaqui:/var/lib/cloudiplookup# ll
-total 19836
-drwxr-xr-x  2 root root     4096 Oct 11 21:12 ./
-drwxr-xr-x 47 root root     4096 Oct 11 21:11 ../
--rw-r--r--  1 root root 10242492 Nov  5 23:27 cloudip.json
--rw-r--r--  1 root root   172158 Nov  6 00:15 cloudiplookup.dat.gz
--rw-r--r--  1 root root  4377128 Nov  5 23:27 cloudiplookup.dat.json
--rw-r--r--  1 root root      942 Sep 29 10:53 cloudiplookup.json
--rw-r--r--  1 root root  1661309 Nov  5 23:26 ipranges-aws.json
--rw-r--r--  1 root root  3661377 Nov  5 23:27 ipranges-azure.json
--rw-r--r--  1 root root    71987 Nov  5 23:27 ipranges-digitalocean.csv
--rw-r--r--  1 root root     4934 Nov  5 23:27 ipranges-gcp.json
--rw-r--r--  1 root root    93165 Nov  5 23:27 ipranges-oracle.json
+root@pirarara:/var/lib/cloudiplookup# ll
+total 20368
+drwxr-xr-x 3 ricardo ricardo     4096 Nov 15 01:54 ./
+drwxr-xr-x 6 ricardo root        4096 Nov  7 23:58 ../
+-rw-r--r-- 1 root    root    10484261 Nov 15 01:54 cloudip.json
+-rw-r--r-- 1 root    root      177903 Nov 15 01:54 cloudiplookup.dat.gz
+-rw-r--r-- 1 root    root     4479551 Nov 15 01:54 cloudiplookup.dat.json
+-rw-r--r-- 1 root    root        1448 Nov 15 01:31 cloudiplookup.json
+-rw-r--r-- 1 root    root     1666844 Nov 15 02:22 ipranges-aws.json
+-rw-r--r-- 1 root    root     3678383 Nov 15 02:22 ipranges-azure.json
+-rw-r--r-- 1 root    root         788 Nov 15 02:22 ipranges-cloudflare.json
+-rw-r--r-- 1 root    root       71987 Nov 15 02:22 ipranges-digitalocean.csv
+-rw-r--r-- 1 root    root       83122 Nov 15 02:22 ipranges-gcp.json
+-rw-r--r-- 1 root    root        4934 Nov 15 02:22 ipranges-goog.json.json
+-rw-r--r-- 1 root    root       14358 Nov 15 02:22 ipranges-googlebot.json.json
+-rw-r--r-- 1 root    root        4527 Nov 15 02:22 ipranges-jdcloud.json
+-rw-r--r-- 1 root    root       93165 Nov 15 02:23 ipranges-oracle.json
+-rw-r--r-- 1 root    root       13289 Nov 15 02:22 ipranges-special-crawlers.json.json
+-rw-r--r-- 1 root    root       43826 Nov 15 02:22 ipranges-user-triggered-fetchers.json.json
 ```
-
 
 ## Sugestions, feedbacks, bugs, new cloud service provider requests...
 E-mail me: ricardoabuchaim at gmail.com

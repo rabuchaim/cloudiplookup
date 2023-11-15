@@ -1,7 +1,6 @@
 import os, sys, shutil, codecs
 from setuptools import setup
 from setuptools.command.install import install
-from distutils.sysconfig import get_python_lib
 import shutil
 
 target_directory = '/var/lib/cloudiplookup/'
@@ -16,8 +15,8 @@ class CustomInstallCommand(install):
 
 setup(
     name='cloudiplookup',
-    version='1.0.4',
-    description='Cloud IP Lookup is a Pure Python application and library for Python 3 to verify which cloud platform a given IP address belongs to (AWS, Azure, DigitalOcean, Google Cloud and Oracle Cloud).',
+    version='1.0.5',
+    description='Cloud IP Lookup is a Pure Python application and library for Python 3 to verify which cloud platform a given IP address belongs to (AWS, Azure, Cloudflare, DigitalOcean, Google Services/Cloud, JD Cloud and Oracle Cloud).',
     url='https://github.com/rabuchaim/cloudiplookup',
     author='Ricardo Abuchaim',
     author_email='ricardoabuchaim@gmail.com',

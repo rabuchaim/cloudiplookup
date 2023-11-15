@@ -2,54 +2,16 @@
 # encoding: utf-8
 # -*- coding: utf-8 -*-
 """
-Cloud IP Lookup v1.0.4 - Public cloud services IP addresses lookup tool
+Cloud IP Lookup v1.0.5 - Public cloud services IP addresses lookup tool
 
 Author: Ricardo Abuchaim - ricardoabuchaim@gmail.com
         https://github.com/rabuchaim/cloudiplookup
 
 License: MIT
 
-What's new in v1.0.4 - 08/Nov/2023
-- Created a debug option in function update_ip_ranges(). The debug option save all files
-  downloaded from cloud providers into the data directory. Debug is not verbose!
-
-  def update_ip_ranges(verbose=False,debug=False):
-
-- The "verbose" option in the update_ip_ranges(verbose=False) function was not 
-  working. This problem only occurs if you are using as a library and try to 
-  update cloudiplookup while a program is running. Verbose log messages 
-  were displayed even if enabled with the "verbose=False" option. It is now 
-  working correctly. It did not affect the search or the update itself.
-
-    >>> from cloudiplookup import CloudIPLookup, update_ip_ranges
-    >>> update_ip_ranges(verbose=False,debug=False)
-    0
-    >>> update_ip_ranges(Verbose=True,debug=False)
-    Updating AWS - Downloading IP ranges file [0.342903962 sec]
-    Updating AWS - Parsing IPv4 and IPv6 ranges updated at 2023-11-07 22:43:10 [0.009359716 sec]
-    (.......)
-
-What's new in v1.0.2 - 06/Nov/2023
-- Cloud providers' update dates have been normalized. Aesthetic change.
-
-What's new in v1.0.1 - 06/Nov/2023
-- Changed Digital Ocean URL (just added www to the hostname)
-- Collected last modified date from Digital Ocean via http header (previously 
-  last modified date was not collected)
-- Print output in csv format (ip,cidr,region,cloud_provider,service,elapsed_time)
-- Fixed an issue in the function that adjusts the terminal window. This problem 
-  prevented the cloudiplookup.py script from being executed by crontab.
-- Fixed the function that checks the memory used in Windows
-- You can run "cloudiplookup" from any path on windows
-- Fully tested in Python 3.11, 3.12 and 3.13
-- Put some flowers
-
-What's new in v1.0.0 - 30/Sep/2023
-- INITIAL PUBLIC RELEASE
-
 """ 
 __appid__   = "Cloud IP Lookup"
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 
 import sys, os, json, socket, struct, gzip, pickle, re, ctypes
 import urllib.request
@@ -177,21 +139,34 @@ def json_default_formatter(o):
 
 ##──── DOWNLOAD A FILE FROM INTERNET. IF IT´S A JSON, RETURNS JSON OTHERWISE RETURNS A LIST OF STRINGS ───────────────────────────
 ##──── A real browser User agent is needed to download Digital Ocean files because it does not accept empty/curl user agent ──────
-def download_file(url,user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"):
+def download_file(url, user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36", max_redirects=5):
     global last_modified
-    try:    
-        req = urllib.request.Request(url, headers={'User-Agent': user_agent} if user_agent else {}) 
-        with urllib.request.urlopen(req) as response:
-            last_modified = response.headers['Last-Modified'] if 'Last-Modified' in response.headers else None
-            data = response.read().decode('utf-8')
+    redirects = 0
+    while redirects < max_redirects:
         try:
-            json_data = json.loads(data)
-            return json_data
-        except:
-            return data.split("\n")
-    except urllib.error.URLError as ERR:
-        logVerbose(f"Unable to download JSON file ({url}): {str(ERR)}")
-        return False
+            req = urllib.request.Request(url, headers={'User-Agent': user_agent} if user_agent else {})
+            with urllib.request.urlopen(req) as response:
+                if response.getcode() == 302:
+                    url = response.headers['Location']
+                    redirects += 1
+                    continue
+                last_modified = response.headers['Last-Modified'] if 'Last-Modified' in response.headers else None
+                if last_modified is None:
+                    try:
+                        last_modified = response.headers['date'] if 'date' in response.headers else None
+                    except:
+                        last_modified = dt.now()
+                data = response.read().decode('utf-8')                
+                try:
+                    json_data = json.loads(data)
+                    return json_data
+                except json.JSONDecodeError:
+                    return data.split("\n")
+        except urllib.error.URLError as ERR:
+            logVerbose(f"Unable to download file ({url}): {str(ERR)}")
+            return False
+    logVerbose(f"Exceeded maximum redirects. {url}")
+    return False
 
 ##──── SPLIT A LIST IN CHUNKS OF "n" ───────────────────────────────────────────────────────────────────────────────────────────
 def split_list(lista, n):
@@ -429,7 +404,6 @@ class CloudIPLookup(object):
         except Exception as ERR:
             return CloudIPDetail(ip=ipaddr,region=str(ERR),cloud_provider="<internal lookup error>",elapsed_time='%.9f sec'%(perf_counter()-startTime))
              
-    
 ##──── CLASS FOR ARGUMENT PARSER ──────────────────────────────────────────────────────────────────────────────────────────────────────
 class class_argparse_formatter(HelpFormatter):
     def add_usage(self, usage, actions, groups, prefix=None):
@@ -438,7 +412,6 @@ class class_argparse_formatter(HelpFormatter):
         return super(class_argparse_formatter, self).add_usage(usage, actions, groups, prefix)
     def _format_usage(self, usage, actions, groups, prefix):
         return super(class_argparse_formatter, self)._format_usage(usage, actions, groups, prefix)
-
 
 ##################################################################################################################################
 
@@ -469,8 +442,14 @@ def update_ip_ranges(verbose=False,debug=False):
             ##──── Each cloud provider has its own file format, so it´s necessary a specific for each one ────────────────────────────────────
             update_ip_ranges_aws(infoFile['AWS']['download_url'])
             update_ip_ranges_azure(infoFile['AZURE']['info_page']) # azure is different
+            update_ip_ranges_cloudflare(infoFile['CLOUDFLARE']['download_url']) 
             update_ip_ranges_digital_ocean(infoFile['DIGITALOCEAN']['download_url'])
-            update_ip_ranges_google_cloud(infoFile['GCP']['download_url'])
+            update_ip_ranges_google_cloud(infoFile['GOOGLECLOUD']['download_url'])
+            update_ip_ranges_google_services(infoFile['GOOGLESERVICES']['download_url'])
+            update_ip_ranges_google_services(infoFile['GOOGLEBOT']['download_url'])
+            update_ip_ranges_google_services(infoFile['GOOGLESSPECIALCRAWLERS']['download_url'])
+            update_ip_ranges_google_services(infoFile['GOOGLESUSERTRIGGERED']['download_url'])
+            update_ip_ranges_jdcloud(infoFile['JDCLOUD']['download_url']) # cloudflare jdcloud china
             update_ip_ranges_oracle_cloud(infoFile['ORACLE']['download_url'])
     except Exception as ERR:
         logDebug(f"Failed to update IP ranges - {str(ERR)}")
@@ -635,11 +614,58 @@ def update_ip_ranges_google_cloud(download_url):
         with elapsed_timer() as elapsed:
             ipranges = download_file(download_url)
             if ipranges == False:
-                logError(f"Updating GCP - FAILED to download IP ranges file from {download_url} {timer(elapsed())}")
+                logError(f"Updating GOOGLE CLOUD - FAILED to download IP ranges file from {download_url} {timer(elapsed())}")
                 return False
-            logVerbose(f"Updating GCP - Downloading IP ranges file {timer(elapsed())}")
+            logVerbose(f"Updating GOOGLE CLOUD - Downloading IP ranges file {timer(elapsed())}")
             if _DEBUG == True:
-                outputFile = os.path.join(DATA_DIR,'ipranges-gcp.json')
+                outputFile = os.path.join(DATA_DIR,'ipranges-googlecloud.json')
+                logDebug(f"Saving ipranges to {outputFile}")
+                with open(outputFile,'w') as f:
+                    json.dump(ipranges,f,indent=3,sort_keys=False,ensure_ascii=False,default=json_default_formatter)
+        with elapsed_timer() as elapsed:
+            for item in ipranges['prefixes']:
+                service = item['service']
+                region = item['scope']
+                if item.get('ipv4Prefix',0) != 0:
+                    cidr = item['ipv4Prefix']
+                    first_ip, netlen = str(cidr).split("/")
+                    first_ip2int = ipv4_to_int(first_ip)
+                else:
+                    cidr = item['ipv6Prefix']
+                    first_ip, netlen = str(cidr).split("/")
+                    first_ip2int = ipv6_to_int(first_ip)
+                cloudip[first_ip2int] = {'provider':'Google Cloud Platform','cidr':cidr,'region':region,'service':service,'netlength':int(netlen),'network_features':''}
+        try:
+            formatedDate = dt.strptime(ipranges['creationTime'], "%Y-%m-%dT%H:%M:%S.%f")
+            formatedDate = formatedDate.strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            formatedDate = ipranges['creationTime']
+        logVerbose(f"Updating GOOGLE CLOUD - Parsing IPv4 and IPv6 ranges updated at {formatedDate} {timer(elapsed())}")
+        databaseInfo["Google Cloud"] = {'last_updated':formatedDate,
+                                        'total_networks':len(cloudip.keys())-initialLen}
+    except Exception as ERR:
+        logVerbose(f"Failed to update GOOGLE CLOUD PLATFORM IP ranges - {str(ERR)}")
+        return 1
+
+##──── UPDATE GOOGLE CLOUD SERVICES IP RANGES ──────────────────────────────────────────────────────────────────────────────────────────────────────
+@print_elapsed_time
+def update_ip_ranges_google_services(download_url):
+    global cloudip, databaseInfo, _DEBUG
+    initialLen = len(cloudip.keys())
+    try:
+        service = 'Google Bot' \
+                if download_url.find("googlebot") >= 0 else 'Google Special Crawlers' \
+                if download_url.find("special-crawlers") >= 0 else 'Google User Triggered Fetchers' \
+                if download_url.find("user-triggered") >= 0 else 'Google Services'
+        with elapsed_timer() as elapsed:
+            ipranges = download_file(download_url)
+            if ipranges == False:
+                logError(f"Updating GOOGLE {service.upper().replace('GOOGLE ','')} - FAILED to download IP ranges file from {download_url} {timer(elapsed())}")
+                return False
+            logVerbose(f"Updating GOOGLE {service.upper().replace('GOOGLE ','')} - Downloading IP ranges file {timer(elapsed())}")
+            if _DEBUG == True:
+                filename = download_url.split("/")[-1]
+                outputFile = os.path.join(DATA_DIR,f'ipranges-{filename}.json')
                 logDebug(f"Saving ipranges to {outputFile}")
                 with open(outputFile,'w') as f:
                     json.dump(ipranges,f,indent=3,sort_keys=False,ensure_ascii=False,default=json_default_formatter)
@@ -653,18 +679,99 @@ def update_ip_ranges_google_cloud(download_url):
                     cidr = item['ipv6Prefix']
                     first_ip, netlen = str(cidr).split("/")
                     first_ip2int = ipv6_to_int(first_ip)
-                cloudip[first_ip2int] = {'provider':'Google Cloud','cidr':cidr,'region':'','service':'','netlength':int(netlen),'network_features':''}
+                cloudip[first_ip2int] = {'provider':"Google",'cidr':cidr,'region':'','service':service.replace("Google ",""),'netlength':int(netlen),'network_features':''}
         try:
             formatedDate = dt.strptime(ipranges['creationTime'], "%Y-%m-%dT%H:%M:%S.%f")
             formatedDate = formatedDate.strftime("%Y-%m-%d %H:%M:%S")
         except:
             formatedDate = ipranges['creationTime']
-        logVerbose(f"Updating GCP - Parsing IPv4 and IPv6 ranges updated at {formatedDate} {timer(elapsed())}")
-        databaseInfo["Google Cloud"] = {'last_updated':formatedDate,
-                                        'total_networks':len(cloudip.keys())-initialLen}
+        logVerbose(f"Updating GOOGLE {service.upper().replace('GOOGLE ','')} - Parsing IPv4 and IPv6 ranges updated at {formatedDate} {timer(elapsed())}")
+        databaseInfo[service] = {'last_updated':formatedDate,
+                                 'total_networks':len(cloudip.keys())-initialLen}
     except Exception as ERR:
-        logVerbose(f"Failed to update GOOGLE CLOUD PLATFORM IP ranges - {str(ERR)}")
+        logVerbose(f"Failed to update GOOGLE {service.upper().replace('GOOGLE ','')} IP ranges - {str(ERR)}")
         return 1
+
+##──── UPDATE CLOUDFLARE IP RANGES ──────────────────────────────────────────────────────────────────────────────────────────────────────
+@print_elapsed_time
+def update_ip_ranges_cloudflare(download_url):
+    global cloudip, databaseInfo, _DEBUG
+    initialLen = len(cloudip.keys())
+    try:
+        with elapsed_timer() as elapsed:
+            ipranges = download_file(download_url)
+            if ipranges == False:
+                logError(f"Updating CLOUDFLARE - FAILED to download IP ranges file from {download_url} {timer(elapsed())}")
+                return False
+            logVerbose(f"Updating CLOUDFLARE - Downloading IP ranges file {timer(elapsed())}")
+            if _DEBUG == True:
+                outputFile = os.path.join(DATA_DIR,'ipranges-cloudflare.json')
+                logDebug(f"Saving ipranges to {outputFile}")
+                with open(outputFile,'w') as f:
+                    json.dump(ipranges,f,indent=3,sort_keys=False,ensure_ascii=False,default=json_default_formatter)
+        with elapsed_timer() as elapsed:
+            for item in ipranges['result']['ipv4_cidrs']:
+                cidr = item
+                first_ip, netlen = str(cidr).split("/")
+                first_ip2int = ipv4_to_int(first_ip)
+                cloudip[first_ip2int] = {'provider':'Cloudflare','cidr':cidr,'region':'','service':'','netlength':int(netlen),'network_features':''}
+            for item in ipranges['result']['ipv6_cidrs']:
+                cidr = item
+                first_ip, netlen = str(cidr).split("/")
+                first_ip2int = ipv6_to_int(first_ip)
+                cloudip[first_ip2int] = {'provider':'Cloudflare','cidr':cidr,'region':'','service':'','netlength':int(netlen),'network_features':''}
+        # Cloudflare has an API, so the date in header is always the current date time.
+        try:
+            formatedDate = dt.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %Z")
+            formatedDate = formatedDate.strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            formatedDate = last_modified
+        logVerbose(f"Updating CLOUDFLARE - Parsing IPv4 and IPv6 ranges updated at {formatedDate} {timer(elapsed())}")
+        databaseInfo["Cloudflare"] = {'last_updated':formatedDate,
+                                      'total_networks':len(cloudip.keys())-initialLen}
+    except Exception as ERR:
+        logVerbose(f"Failed to update CLOUDFLARE IP ranges - {str(ERR)}")
+        return 1
+
+##──── UPDATE CLOUDFLARE IP RANGES ──────────────────────────────────────────────────────────────────────────────────────────────────────
+@print_elapsed_time
+def update_ip_ranges_jdcloud(download_url):
+    global cloudip, databaseInfo, _DEBUG
+    initialLen = len(cloudip.keys())
+    try:
+        with elapsed_timer() as elapsed:
+            ipranges = download_file(download_url)
+            if ipranges == False:
+                logError(f"Updating JD CLOUD - FAILED to download IP ranges file from {download_url} {timer(elapsed())}")
+                return False
+            logVerbose(f"Updating JD CLOUD - Downloading IP ranges file {timer(elapsed())}")
+            if _DEBUG == True:
+                outputFile = os.path.join(DATA_DIR,'ipranges-jdcloud.json')
+                logDebug(f"Saving ipranges to {outputFile}")
+                with open(outputFile,'w') as f:
+                    json.dump(ipranges,f,indent=3,sort_keys=False,ensure_ascii=False,default=json_default_formatter)
+        with elapsed_timer() as elapsed:
+            for item in ipranges['result']['jdcloud_cidrs']:
+                cidr = item
+                first_ip, netlen = str(cidr).split("/")
+                try:
+                    first_ip2int = ipv4_to_int(first_ip)
+                except:
+                    first_ip2int = ipv6_to_int(first_ip)
+                cloudip[first_ip2int] = {'provider':'JD Cloud','cidr':cidr,'region':'China','service':'','netlength':int(netlen),'network_features':''}
+        # Cloudflare JD Cloud China has an API, so the date in header is always the current date time.
+        try:
+            formatedDate = dt.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %Z")
+            formatedDate = formatedDate.strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            formatedDate = last_modified
+        logVerbose(f"Updating JD CLOUD - Parsing IPv4 and IPv6 ranges updated at {formatedDate} {timer(elapsed())}")
+        databaseInfo["JD Cloud"] = {'last_updated':formatedDate,
+                                    'total_networks':len(cloudip.keys())-initialLen}
+    except Exception as ERR:
+        logVerbose(f"Failed to update JD CLOUD IP ranges - {str(ERR)}")
+        return 1
+
 
 ##──── UPDATE ORACLE CLOUD IP RANGES ──────────────────────────────────────────────────────────────────────────────────────────────────────
 @print_elapsed_time
@@ -774,8 +881,9 @@ def main_function():
     output = parser.add_argument_group("Output Options") 
     output.add_argument("--csv","-c",dest='csv',action="store_true",default=False,help="Print output in csv format (ip,cidr,region,cloud_provider,service,elapsed_time).")
     update = parser.add_argument_group("Database Options")
-    update.add_argument("--info","-i",dest='info',action="store_true",default=False,help="Shows information about the current database file.")
     update.add_argument("--update","-u",dest='update',action="store_true",default=False,help="Updates IP ranges directly from cloud service providers. Use -v to see updating progress.")
+    update.add_argument("--info","-i",dest='info',action="store_true",default=False,help="Shows information about the current database file in json format.")
+    update.add_argument("--pretty","-p",dest='pretty',action="store_true",default=False,help="Shows information about the current database file in a table format.")
     update.add_argument("--show-config-file",dest='showconfigfile',action="store_true",default=False,help="Displays the available settings for downloading information about network ranges.")
     optional = parser.add_argument_group("More Options")
     optional.add_argument('--verbose','-v',dest="verbose",action='store_true',default=False,help='Shows useful messages about each step that application is doing.')
@@ -808,9 +916,11 @@ def main_function():
 
     iplookup = CloudIPLookup((args.verbose or args.debug))
     if (args.info == True):
-        pp_json(databaseInfo)
-        # for key,val in databaseInfo.items():
-        #     print(f"{key.ljust(15,'.')}: {(str(val['total_networks'])+' networks ').ljust(15)} {val['last_updated']}")
+        if args.pretty == True:
+            for key,val in databaseInfo.items():
+                print(f"{key.ljust(32,'.')}: {(str(val['total_networks'])+' networks ').ljust(15)} - Last update: {val['last_updated']}")
+        else:
+            pp_json(databaseInfo)
         sys.exit(0)
     
     if (args.ipaddr is None):
