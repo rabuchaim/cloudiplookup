@@ -1,0 +1,46 @@
+{
+    "AWS": {
+        "info_page": "https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html",
+        "download_url": "https://ip-ranges.amazonaws.com/ip-ranges.json"
+    },
+    "AZURE": {
+        "info_page": "https://www.microsoft.com/en-us/download/details.aspx?id=56519",
+        "download_url": "https://download.microsoft.com/download/(...)/ServiceTags_Public_XXXXXXXX.json"
+    },
+    "CLOUDFLARE": {
+        "info_page": "https://www.cloudflare.com/ips/",
+        "download_url": "https://api.cloudflare.com/client/v4/ips"
+    },
+    "DIGITALOCEAN": {
+        "info_page": "https://docs.digitalocean.com/products/platform/",
+        "download_url": "https://www.digitalocean.com/geo/google.csv"
+    },
+    "GOOGLESERVICES": {
+        "info_page": "https://support.google.com/a/answer/10026322?hl=en",
+        "download_url": "https://www.gstatic.com/ipranges/goog.json"
+    },    
+    "GOOGLEBOT": {
+        "info_page": "https://developers.google.com/search/docs/crawling-indexing/verifying-googlebot?hl=pt-br#use-automatic-solutions",
+        "download_url": "https://developers.google.com/search/apis/ipranges/googlebot.json"
+    },
+    "GOOGLESSPECIALCRAWLERS": {
+        "info_page": "https://developers.google.com/search/docs/crawling-indexing/verifying-googlebot?hl=pt-br#use-automatic-solutions",
+        "download_url": "https://developers.google.com/search/apis/ipranges/special-crawlers.json"
+    },
+    "GOOGLESUSERTRIGGERED": {
+        "info_page": "https://developers.google.com/search/docs/crawling-indexing/verifying-googlebot?hl=pt-br#use-automatic-solutions",
+        "download_url": "https://developers.google.com/search/apis/ipranges/user-triggered-fetchers.json"
+    },    
+    "GOOGLECLOUD": {
+        "info_page": "https://support.google.com/a/answer/10026322?hl=en",
+        "download_url": "https://www.gstatic.com/ipranges/cloud.json"
+    },
+    "JDCLOUD": {
+        "info_page": "https://www.cloudflare.com/ips/",
+        "download_url": "https://api.cloudflare.com/client/v4/ips?networks=jdcloud"
+    },
+    "ORACLE": {
+        "info_page": "https://docs.oracle.com/pt-br/iaas/Content/General/Concepts/addressranges.htm",
+        "download_url": "https://docs.oracle.com/iaas/tools/public_ip_ranges.json"
+    }
+}
